@@ -1,9 +1,9 @@
 ---
-title: "Untitled"
+title: "碩一生活小調查"
 output: github_document
 ---
 # clean data
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 setwd("C:\\Users\\user\\Desktop\\workplace")
 library(tidyverse)
 #life.df <- readxl::read_xlsx("lifesurvey.xlsx")
@@ -66,5 +66,71 @@ life.df1 <- life.df %>%
 life1.long <- life.df1 %>%
     select(1, 57:63) %>%
     gather(key = perweek, value = hours, -id)
+
+life2.long <- life.df2 %>%
+    select(1, 63:69) %>%
+    gather(key = perweek, value = hours, -id)
+
+    
 ```
 
+---
+
+# 第一學期時間分配
+
+```{r}
+bar1 <- life1.long %>%
+    group_by(perweek) %>%
+    summarise(hoursw = sum(hours)) %>%
+    mutate(prop = hoursw / sum(hoursw)) %>%
+ggplot() +
+    geom_bar(mapping = aes(x = perweek, y = prop, fill = perweek), stat = "identity")
+bar1
+
+```
+
+---
+
+```{r}
+bar1 + coord_polar()
+```
+---
+
+# 第二學期時間分配
+
+```{r}
+bar2 <- life2.long %>%
+    group_by(perweek) %>%
+    summarise(hoursw = sum(hours)) %>%
+    mutate(prop = hoursw / sum(hoursw)) %>%
+ggplot() +
+    geom_bar(mapping = aes(x = perweek, y = prop, fill = perweek), stat = "identity")
+bar2
+```
+
+---
+
+```{r}
+bar2 + coord_polar()
+```
+
+---
+
+# 兩學期比較
+
+```{r}
+b1 <- life1.long %>%
+    group_by(perweek) %>%
+    summarise(hoursw = sum(hours)) %>%
+    mutate(prop = hoursw / sum(hoursw), sem = "1")
+b2 <- life2.long %>%
+    group_by(perweek) %>%
+    summarise(hoursw = sum(hours)) %>%
+    mutate(prop = hoursw / sum(hoursw), sem = "2")
+
+b12 <- bind_rows(b1, b2)
+ggplot(b12) +
+    geom_bar(mapping = aes(x = perweek, y = prop, fill = sem), stat = "identity",
+             position = "dodge")
+```
+---
