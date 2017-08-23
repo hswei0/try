@@ -1,0 +1,70 @@
+---
+title: "Untitled"
+output: github_document
+---
+# clean data
+```{r, message=FALSE, warning=FALSE}
+setwd("C:\\Users\\user\\Desktop\\workplace")
+library(tidyverse)
+#life.df <- readxl::read_xlsx("lifesurvey.xlsx")
+life.df <- read_csv("lifesurvey.csv")
+names(life.df)[2] <- "gender"
+life.df[2] <- gsub("生理男", 1, life.df$gender)
+life.df[2] <- gsub("生理女", 0, life.df$gender)
+
+# 命名變項
+
+renvar <- function(x){
+    x <- gsub("週一的時間分配 - ", "Mon_", x)
+    x <- gsub("週二的時間分配 - ", "Tue_", x)
+    x <- gsub("週三的時間分配 - ", "Wen_", x)
+    x <- gsub("週四的時間分配 - ", "Thu_", x)
+    x <- gsub("週五的時間分配 - ", "Fri_", x)
+    x <- gsub("週六的時間分配 - ", "Sat_", x)
+    x <- gsub("週日的時間分配 - ", "Sun_", x)
+  
+    x <- gsub("修課時間", "studying", x)
+    x <- gsub("助教工作時間", "ast", x)
+    x <- gsub("上班時間", "job", x)
+    x <- gsub("論文時間", "research", x)
+    x <- gsub("重要他人時間", "company", x)
+    x <- gsub("其他外務時間", "other", x)
+    x <- gsub("睡眠時間", "sleeping", x)
+    
+    x
+}
+names(life.df)[1] <- "id"
+var <- names(life.df)
+var <- renvar(var)
+names(life.df) <- var
+
+
+# 加總
+rsum <- function(x, y) {
+  z <- x %>% rowwise() %>% select(contains(y)) %>% rowSums() 
+  z    
+}
+    
+life.df2 <- life.df %>%
+    select(-contains("_1")) %>%
+    mutate(studying = rsum(., "studying"),
+           ast = rsum(., "ast"), 
+           job = rsum(., "job"),
+           research = rsum(., "research"),
+           company = rsum(., "company"),
+           other = rsum(., "other"),
+           sleeping = rsum(., "sleeping"))
+life.df1 <- life.df %>%
+    select(1:6, contains("_1")) %>%
+    mutate(studying = rsum(., "studying"),
+           ast = rsum(., "ast"), 
+           job = rsum(., "job"),
+           research = rsum(., "research"),
+           company = rsum(., "company"),
+           other = rsum(., "other"),
+           sleeping = rsum(., "sleeping"))
+life1.long <- life.df1 %>%
+    select(1, 57:63) %>%
+    gather(key = perweek, value = hours, -id)
+```
+
