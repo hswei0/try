@@ -205,8 +205,8 @@ ggplot() +
 
 ---
 
-# 個人狀況
-```{r, echo=FALSE}
+# 個人狀況(不公布)
+```{r, eval=FALSE, include=FALSE}
 b12.long %>%
  distinct(id, sem) %>%
  mutate(number = c(seq(1:24))) %>%
@@ -225,6 +225,45 @@ b12.long %>%
 
 細分為個人的時間安排來看，修課時間是主要的時間安排，但修課的學分數並不必然排擠到從事研究的時間，但同時可能會壓縮到陪伴或從事其他事物的時間。
 
+---
+
+# 高研究時間組
+```{r, echo=FALSE}
+p1 <-  b12.long %>%
+  filter(perweek == "research") %>%
+  arrange(desc(hours)) %>%
+  mutate(res_rank = seq(1:24)) %>%
+  select(id, sem, res_rank) %>%
+  right_join(b12.long, by = c("id", "sem")) %>%
+  filter(res_rank <= 3) %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = res_rank %>% as.factor(), y = hours, fill = perweek), stat = "identity",
+           width = 0.55) +
+  labs(title = "研究時數較高組", x = "個人狀況", y = "小時") +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_discrete(guide = F)+
+  theme(text= element_text(family = "黑體-繁 中黑", size = 14))
+
+p2 <- b12.long %>%
+  filter(perweek == "research") %>%
+  arrange(desc(hours)) %>%
+  mutate(res_rank = seq(1:24)) %>%
+  select(id, sem, res_rank) %>%
+  right_join(b12.long, by = c("id", "sem")) %>%
+  filter(res_rank >= 22) %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = res_rank %>% as.factor(), y = hours, fill = perweek), stat = "identity") +
+  labs(title = "研究時數較低組", x = "個人狀況", y = "小時") +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_discrete(name = "時間安排項目", labels = c("助教", "重要他人", "工作", "其他重要事物", "研究", "睡眠", "修課"))+
+  theme(text= element_text(family = "黑體-繁 中黑", size = 14))
+gridExtra::grid.arrange(p1, p2, nrow = 1, ncol = 2)
+
+```
+
+若是希望能增加研究時間，則可能得犧牲工作時數，以及從事其他事物的時間，同時能負擔修課的時間也減少。
+
+---
 
 
 
