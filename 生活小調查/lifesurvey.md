@@ -6,76 +6,64 @@ clean data
 
 ------------------------------------------------------------------------
 
+mapping tools
+=============
+
+整體時間分配
+============
+
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-3-1.png)
+
+可以由此看出各項目的分布狀況，修課時間是大家平均安排最多時間的項目，其中工作、其他和研究項目上都有較極端的 個案。
+
+------------------------------------------------------------------------
+
 平均一周的時間分配
 ==================
 
 第一學期
 --------
 
-``` r
-bar1 <- life1.long %>%
-    group_by(perweek) %>%
-    summarise(hoursw = sum(hours)) %>%
-    mutate(prop = hoursw / sum(hoursw)) %>%
-ggplot() +
-    geom_bar(mapping = aes(x = perweek, y = prop, fill = perweek), stat = "identity")
-bar1
-```
-
-![](lifesurvey_files/figure-markdown_github/unnamed-chunk-2-1.png)
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-1.png)
 
 ------------------------------------------------------------------------
 
-``` r
-bar1 + coord_polar()
-```
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-5-1.png)
 
-![](lifesurvey_files/figure-markdown_github/unnamed-chunk-3-1.png)
-------------------------------------------------------------------
+------------------------------------------------------------------------
 
 第二學期
 --------
 
-``` r
-bar2 <- life2.long %>%
-    group_by(perweek) %>%
-    summarise(hoursw = sum(hours)) %>%
-    mutate(prop = hoursw / sum(hoursw)) %>%
-ggplot() +
-    geom_bar(mapping = aes(x = perweek, y = prop, fill = perweek), stat = "identity")
-bar2
-```
-
-![](lifesurvey_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-6-1.png)
 
 ------------------------------------------------------------------------
 
-``` r
-bar2 + coord_polar()
-```
-
-![](lifesurvey_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-7-1.png)
 
 ------------------------------------------------------------------------
 
 兩學期比較
 ==========
 
-``` r
-b1 <- life1.long %>%
-    group_by(perweek) %>%
-    summarise(hoursw = sum(hours)) %>%
-    mutate(prop = hoursw / sum(hoursw), sem = "1")
-b2 <- life2.long %>%
-    group_by(perweek) %>%
-    summarise(hoursw = sum(hours)) %>%
-    mutate(prop = hoursw / sum(hoursw), sem = "2")
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-8-1.png)
 
-b12 <- bind_rows(b1, b2)
-ggplot(b12) +
-    geom_bar(mapping = aes(x = perweek, y = prop, fill = sem), stat = "identity",
-             position = "dodge")
-```
+兩個學期比較起來，並沒有明顯的差別。
 
-![](lifesurvey_files/figure-markdown_github/unnamed-chunk-6-1.png)
-------------------------------------------------------------------
+------------------------------------------------------------------------
+
+各學分組比較
+============
+
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-9-1.png)
+
+細分修課學分來看，將0學分和3學分合併，較明顯的可以發現修課時間增加會壓縮到工作的時間。
+
+------------------------------------------------------------------------
+
+個人狀況
+========
+
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-10-1.png)
+
+細分為個人的時間安排來看，修課時間是主要的時間安排，但修課的學分數並不必然排擠到從事研究的時間，但同時可能會壓縮到陪伴或從事其他事物的時間。
