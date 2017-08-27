@@ -88,3 +88,8 @@ mapping tools
 若是希望能增加研究時間，則可能得犧牲工作時數，以及從事其他事物的時間，同時能負擔修課的時間也減少。
 
 ------------------------------------------------------------------------
+
+各種類型
+========
+
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-18-1.png)

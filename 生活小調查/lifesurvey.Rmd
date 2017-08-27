@@ -289,8 +289,88 @@ gridExtra::grid.arrange(p1, p2, nrow = 1, ncol = 2)
 
 ---
 
+# 各種類型
+
+```{r, include=FALSE}
+p1 <- b12.long %>%
+  filter(perweek == "research") %>%
+  arrange(desc(hours)) %>%
+  mutate(rank = seq(1:24)) %>%
+  select(id, sem, rank) %>%
+  right_join(b12.long, by = c("id", "sem")) %>%
+  filter(rank <= 3) %>%
+  group_by(perweek) %>%
+  summarise(mean = mean(hours)) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
+  labs(title = "高研究時間", x = "時間安排項目", y = "小時") +
+  scale_fill_discrete(guide = F)+
+  scale_x_discrete(labels = perweek.lab) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1), text= element_text(family = "黑體-繁 中黑", size = 14))
+```
 
 
 
+```{r, include=FALSE}
+p2 <- b12.long %>%
+  filter(perweek == "studying") %>%
+  arrange(desc(hours)) %>%
+  mutate(rank = seq(1:24)) %>%
+  select(id, sem, rank) %>%
+  right_join(b12.long, by = c("id", "sem")) %>%
+  filter(rank <= 3) %>%
+  group_by(perweek) %>%
+  summarise(mean = mean(hours)) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
+  labs(title = "高修課時間", x = "時間安排項目", y = "小時") +
+  scale_fill_discrete(guide = F)+
+  scale_x_discrete(labels = perweek.lab) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1), text= element_text(family = "黑體-繁 中黑", size = 14))
+```
 
+
+
+```{r, include=FALSE}
+p3 <- b12.long %>%
+  filter(perweek == "other") %>%
+  arrange(desc(hours)) %>%
+  mutate(rank = seq(1:24)) %>%
+  select(id, sem, rank) %>%
+  right_join(b12.long, by = c("id", "sem")) %>%
+  filter(rank <= 3) %>%
+  group_by(perweek) %>%
+  summarise(mean = mean(hours)) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
+  labs(title = "高其他重要事物", x = "時間安排項目", y = "小時") +
+  scale_fill_discrete(guide = F)+
+  scale_x_discrete(labels = perweek.lab) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1), text= element_text(family = "黑體-繁 中黑", size = 14))
+```
+
+
+
+```{r, include=FALSE}
+p4 <- b12.long %>%
+  filter(perweek == "job") %>%
+  arrange(desc(hours)) %>%
+  mutate(rank = seq(1:24)) %>%
+  select(id, sem, rank) %>%
+  right_join(b12.long, by = c("id", "sem")) %>%
+  filter(rank <= 3) %>%
+  group_by(perweek) %>%
+  summarise(mean = mean(hours)) %>%
+ggplot() +
+  geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
+  labs(title = "高工作", x = "時間安排項目", y = "小時") +
+  scale_fill_discrete(guide = F)+
+  scale_x_discrete(labels = perweek.lab) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1), text= element_text(family = "黑體-繁 中黑", size = 14))
+p4
+```
+
+```{r, echo=FALSE}
+gridExtra::grid.arrange(p1, p2, p3, p4, nrow = 2, ncol = 2)
+```
 
