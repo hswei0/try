@@ -8,6 +8,7 @@ output: github_document
 setwd("/Users/hsuwei/Desktop/workplace")
 library(tidyverse)
 library(labelled)
+library(sjPlot)
 #life.df <- readxl::read_xlsx("lifesurvey.xlsx")
 life.df <- read_csv("/Users/hsuwei/Desktop/workplace/lifesurvey.csv")
 names(life.df)[2] <- "gender"
@@ -224,6 +225,25 @@ b12.long %>%
 ```
 
 細分為個人的時間安排來看，修課時間是主要的時間安排，但修課的學分數並不必然排擠到從事研究的時間，但同時可能會壓縮到陪伴或從事其他事物的時間。
+
+
+# 學分數與修課時間
+ 
+```{r, echo=FALSE}
+b12.long %>%
+  filter(perweek == "studying")  %>%
+  with(sjp.aov1(hours, class_2 %>% as.factor(), title = "studying time"))
+```
+
+---
+
+# 學分數與研究時間
+```{r, echo=FALSE}
+b12.long %>%
+  filter(perweek == "research")  %>%
+  with(sjp.aov1(hours, class_2 %>% as.factor(), title = "researching time"))
+```
+
 
 ---
 

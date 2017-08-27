@@ -66,12 +66,24 @@ mapping tools
 
 細分為個人的時間安排來看，修課時間是主要的時間安排，但修課的學分數並不必然排擠到從事研究的時間，但同時可能會壓縮到陪伴或從事其他事物的時間。
 
+學分數與修課時間
+================
+
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-11-1.png)
+
+------------------------------------------------------------------------
+
+學分數與研究時間
+================
+
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-12-1.png)
+
 ------------------------------------------------------------------------
 
 高研究時間組
 ============
 
-![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-11-1.png)
+![](lifesurvey_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-13-1.png)
 
 若是希望能增加研究時間，則可能得犧牲工作時數，以及從事其他事物的時間，同時能負擔修課的時間也減少。
 
