@@ -114,8 +114,8 @@ ggplot(b12.long, aes(perweek %>% as.factor(), hours, fill = perweek)) +
   geom_boxplot() +
   labs(title = "時間分配分佈", x = "時間安排項目", y = "小時") +
   scale_x_discrete(labels = perweek.lab) +
-  scale_fill_economist(name = "時間安排項目", labels = perweek.lab) +
-  theme_economist() + 
+  scale_fill_hc(name = "時間安排項目", labels = perweek.lab) +
+  theme_hc() + 
   scale_x_discrete(labels = perweek.lab) +
   theme(text= element_text(family = "黑體-繁 中黑", size = 14))
 ```
@@ -135,8 +135,8 @@ bar1 <- life1.long %>%
   mutate(prop = hoursw / sum(hoursw)) %>%
   ggplot() +
   geom_bar(mapping = aes(x = perweek, y = prop, fill = perweek), stat = "identity")+
-  scale_fill_economist(name = "時間安排項目", labels = perweek.lab) +
-  theme_economist() + 
+  scale_fill_hc(name = "時間安排項目", labels = perweek.lab) +
+  theme_hc() + 
   labs(title = "第一學期每週時間安排", x = "時間安排項目", y = "prop") +
   scale_x_discrete(labels = perweek.lab) +
   theme( text= element_text(family = "黑體-繁 中黑", size = 14))
@@ -161,8 +161,8 @@ bar2 <- life2.long %>%
 ggplot() +
   geom_bar(mapping = aes(x = perweek, y = prop, fill = perweek), stat = "identity")+
   labs(title = "第二學期每週時間安排", x = "時間安排項目", y = "prop") +
-  scale_fill_economist(name = "時間安排項目", labels = perweek.lab) +
-  theme_economist() +
+  scale_fill_hc(name = "時間安排項目", labels = perweek.lab) +
+  theme_hc() +
   scale_x_discrete(labels = perweek.lab) +
   theme( text= element_text(family = "黑體-繁 中黑", size = 14))
 bar2
@@ -181,8 +181,8 @@ bar2 + coord_polar()
 ggplot(b12) +
   geom_bar(mapping = aes(x = perweek, y = prop, fill = sem), stat = "identity", position = "dodge") +
   labs(title = "兩學期時間安排比較", x = "時間安排項目", y = "prop") +
-  scale_fill_economist(name = "學期") +
-  theme_economist() +
+  scale_fill_hc(name = "學期") +
+  theme_hc() +
   scale_x_discrete(labels = perweek.lab) +
   theme( text= element_text(family = "黑體-繁 中黑", size = 14))
 ```
@@ -206,8 +206,8 @@ b12.long %>%
            position = "dodge") +
   labs(title = "各學分組每週時間安排", x = "時間安排項目", y = "小時") +
   facet_grid(~ class_2) +
-  scale_fill_economist(name = "時間安排項目", labels = perweek.lab) +
-  theme_economist() +
+  scale_fill_hc(name = "時間安排項目", labels = perweek.lab) +
+  theme_hc() +
   theme(axis.text.x = element_blank()) +
   theme(text= element_text(family = "黑體-繁 中黑", size = 14))
 ```
@@ -311,8 +311,8 @@ p1 <- b12.long %>%
   ggplot() +
   geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
   labs(title = "高研究時間", x = "時間安排項目", y = "小時") +
-  scale_fill_economist(guide = F) +
-  theme_economist() +
+  scale_fill_hc(guide = F) +
+  theme_hc() +
   theme(axis.text.x = element_blank()) +
   theme(text= element_text(family = "黑體-繁 中黑", size = 14))
 
@@ -333,8 +333,8 @@ p2 <- b12.long %>%
 ggplot() +
   geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
   labs(title = "高修課時間", x = "時間安排項目", y = "小時") +
-  scale_fill_economist(guide = F) +
-  theme_economist() +
+  scale_fill_hc(guide = F) +
+  theme_hc() +
   theme(axis.text.x = element_blank()) +
   theme(text= element_text(family = "黑體-繁 中黑", size = 14))
 
@@ -355,8 +355,8 @@ p3 <- b12.long %>%
 ggplot() +
   geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
   labs(title = "高其他重要事物", x = "時間安排項目", y = "小時") +
-  scale_fill_economist(guide = F) +
-  theme_economist() +
+  scale_fill_hc(guide = F) +
+  theme_hc() +
   theme(axis.text.x = element_blank()) +
   theme(text= element_text(family = "黑體-繁 中黑", size = 14))
 
@@ -377,8 +377,8 @@ p4 <- b12.long %>%
 ggplot() +
   geom_bar(mapping = aes(x = perweek, y = mean, fill = perweek), stat = "identity")+
   labs(title = "高工作", x = "時間安排項目", y = "小時") +
-  scale_fill_economist(guide = F) +
-  theme_economist() +
+  scale_fill_hc(guide = F) +
+  theme_hc() +
   theme(axis.text.x = element_blank()) +
   theme(text= element_text(family = "黑體-繁 中黑", size = 14))
 
