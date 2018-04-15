@@ -1,0 +1,95 @@
+---
+title: "Homwork"
+output: github_document
+---
+
+# 環境設定
+```{r}
+if (!require("pacman")) install.packages("pacman") # `pacman`用於確認套件是否安裝
+pacman::p_load(tidyverse, haven, DataExplorer, magrittr, lme4, sjPlot, sjmisc, labelled, stargazer)
+mydata <- read_sav("/Users/hsuwei/Desktop/try/HLM/newhwlevel1.sav")
+```
+
+
+# 資料探勘
+```{r}
+plot_density(mydata)
+```
+
+由圖所示，iq和sch_iq兩個變項需要中心化調整，否則在迴歸分析中的截距項解釋上會出現謬誤。
+
+## 變項處理
+```{r}
+## 中心化
+mydata %<>%
+  labelled::set_value_labels(sex = c(Female = 0, Male = 1)) %>%
+  mutate(iq.lm = scale(iq, scale = F), #`scale` argument 會進行標準化 grand mean
+         sex = to_factor(sex), 
+         grpcent_iq = iq - sch_iq,  # group mean
+         grdcentsch_iq = sch_iq - mean(iq), 
+         grdcentsch_iq2 = sch_iq - mean(sch_iq))
+
+```
+
+# 回答問題
+
+1. 在不考慮學校效果的情況下，學生的家庭社會經濟地位、智力測驗成績與性別 是否會影響個人數學能力測驗總分?
+
+```{r}
+m1 <- lm(score ~ ses + iq.lm + sex, data = mydata)
+stargazer(m1, type = "text")
+```
+
+2. 若考慮學校效果，學生的數學能力有沒有學校間的差異?
+
+```{r}
+m2 <- lmer(score ~ ses + grpcent_iq + sex + (1|schoolid), data = mydata)
+sjt.lmer(m2, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
+         show.ci = F)
+
+lmerTest::rand(m2)
+```
+
+3. 在考慮學校效果的情況下，學生的家庭社會經濟地位、智力測驗成績與性別是否會影響個人數學能力測驗總分?(假定學生的家庭社會經濟地位、智力測驗成績與性別對個人數學能力測驗總分的影響，不隨學校的不同而有所不同)
+
+```{r}
+m3 <- lmer(score ~ ses + iq.lm + sex + (ses + iq.lm + sex|schoolid), data = mydata)
+
+## centering 
+sjt.lmer(m2, m3, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
+         show.ci = F, p.numeric = F)
+summary(m3)
+lmerTest::rand(m3)
+
+```
+
+```{r}
+model0 <- lmer(score ~ ses + I(iq - sch_iq) + sex + (sch_ses + I(iq - mean(iq))|schoolid), data = mydata)
+stargazer(model0, type = "text")
+summary(model0)
+```
+
+5. 在考慮學校效果的情況下，並不考量個人層次變項(學生的家庭社會經濟地位、智力測驗成績與性別)對學生數學能力的影響，學生的數學能力的學校間差異，是否可以由學校家庭社會經濟地位平均數與學校智力測驗成績所解釋?
+
+```{r}
+m5 <- lmer(score ~ 1 + sch_ses + grdcentsch_iq + (1|schoolid), data = mydata)
+## 如何centering?
+sjt.lmer(m5, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
+         show.ci = F, p.numeric = F)
+```
+
+6. 在考慮學校效果的情況下，學生的家庭社會經濟地位、智力測驗成績與性別對學生數學能力的影響是否有學校間的差異?如果影響效果有差異，是否可以由學校家庭社會經濟地位平均數與學校智力測驗成績所解釋?
+
+```{r}
+
+m6.1 <- lmer(score ~ ses + grpcent_iq + sex + (ses + grpcent_iq + sex|schoolid), 
+             data = mydata)
+
+m6.2 <- lmer(score ~ ses + grpcent_iq + sex + grdcentsch_iq + sch_ses +
+             grdcentsch_iq*(ses + grpcent_iq + sex) + sch_ses*(ses + grpcent_iq + sex) + 
+             (ses + grpcent_iq + sex|schoolid), data = mydata)
+
+sjt.lmer(m6.1, m6.2, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
+         show.ci = F,  p.numeric = F)
+```
+
