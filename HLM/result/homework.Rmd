@@ -38,9 +38,11 @@ mydata %<>%
 
 ```{r}
 m1 <- lm(score ~ ses + iq.lm + sex, data = mydata)
-stargazer(m1, type = "text")
+stargazer(m1, title = "Model1 Result", covariate.labels = c("SES", "IQ", "Male"), type = "text")
 ```
-$$\hat{y_{i}} = \hat{\beta _{0}} + \hat{\beta _{1}}ses_{i} + \hat{\beta _{2}}iq_{i} + \hat{\beta _{3}}sex_{i} + e_{i}--- (1)$$
+
+$$ \hat{y_{i}} = \hat{\beta _{0}} + \hat{\beta _{1}}ses_{i} + \hat{\beta _{2}}iq_{i} + \hat{\beta _{3}}sex_{i} + e_{i}--- (1)$$
+
 $$H_{0}:\beta_{1},\beta_{2},\beta_{3} = 0$$
 
 由題幹可以導出此迴歸式(1)，依變項為個人的數學測驗的分數，整體模型可以解釋42%的變異，三個解釋變項皆有達顯著水準，社經地位每增加一單位可提高0.15分的數學分數，iq增加一單位可提高2.4分，男性比女性多出2.49分。由此可知，學生的家庭社會經濟地位、智力測驗成績與性別確實會影響個人的數學成績，且為正向的關係，而男性的成績也會高於女生。
@@ -49,29 +51,20 @@ $$H_{0}:\beta_{1},\beta_{2},\beta_{3} = 0$$
 
 ```{r, echo=FALSE}
 m2 <- lmer(score ~ ses + grpcent_iq + sex + (1|schoolid), data = mydata)
-sjt.lmer(m2, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
-         show.ci = F)
+sjt.lmer(m2, pred.labels = c("SES", "IQ", "Male"), show.header = F, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, show.ci = F)
 summary(m2)
 lmerTest::rand(m2)
 ```
 $$\hat{y_{ij}} = \hat{\beta _{0j}} + \hat{\beta _{1j}}SES_{ij} + \hat{\beta _{2}}IQ_{ij} + \hat{\beta _{3}}SEX_{ij} + e_{i} --- (2)$$
+
 $$\hat{\beta _{0j}} =  \hat{\gamma_{00}} + \hat{u_{oj}} --- (2.1) $$ 
+
 $$H_{0}:u_{oj} = 0$$
 將學校效果考量進來，可以列出以上兩層次的模型。其中，模型2.1可以解釋為全體的平均數學能力($\gamma_{00}$)加上各校數學能力的差異($u_{oj}$)，因此，若要檢驗學生的數學能力是否有學校間的差異，即檢驗$u_{oj}$是否為零。由結果表顯示$u_{oj}$有達到顯著水準(variance=16.66, P< .001)。因此可以推論學生的數學能力確實存在學校的差異。
 
 
 3. 在考慮學校效果的情況下，學生的家庭社會經濟地位、智力測驗成績與性別是否會影響個人數學能力測驗總分?(假定學生的家庭社會經濟地位、智力測驗成績與性別對個人數學能力測驗總分的影響，不隨學校的不同而有所不同)
 
-```{r, eval=FALSE, include=FALSE}
-m3 <- lmer(score ~ ses + iq.lm + sex + (ses + iq.lm + sex|schoolid), data = mydata)
-
-## centering 
-sjt.lmer(m2, m3, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
-         show.ci = F, p.numeric = F)
-summary(m3)
-lmerTest::rand(m3)
-
-```
 
 為檢驗個人層次變項，在考量學校脈絡下的影響效果，因為假定個人層次的效果不隨學校而變動，代表了斜率效果固定，因此分析上仍是使用模型(2)，但假設則如下：
 $$H_{0}:\beta_{1},\beta_{2},\beta_{3} = 0$$
@@ -81,14 +74,10 @@ $$H_{0}:\beta_{1},\beta_{2},\beta_{3} = 0$$
 
 $$\hat{y_{ij}} = \hat{\gamma_{00}} + \hat{\beta _{1j}}SES_{ij} + \hat{\beta _{2}}IQ_{ij} + \hat{\beta _{3}}SEX_{ij} + \hat{u_{oj}} + e_{i} --- (2.2)$$
 比較兩題的差異，可以直接比對模型(1)和模型2的展開式(2.2)，最大的差別是增加了$u_{0j}$這個學校效果的隨機項，在一般迴歸模型中會將其一併歸入誤差項之中，而無法區辨出學校的差異。更進一步檢視團體間的差異：
+
 $$ICC = \frac{\tau_{00}}{\tau_{00}+\sigma ^{2}} = \frac{16.659}{16.659 + 36.836} = 0.311$$
 這表示群體間的差異約佔了整體變異的31%，將其忽略將會喪失解釋的效力。若就理論層次來看，便是忽略了脈絡的異質性，武斷得認為影響的效果是一體適用的，無法檢視這些影響因子與環境互動的效果。
 
-```{r, eval=FALSE, include=FALSE}
-model0 <- lmer(score ~ ses + I(iq - sch_iq) + sex + (sch_ses + I(iq - mean(iq))|schoolid), data = mydata)
-stargazer(model0, type = "text")
-summary(model0)
-```
 
 5. 在考慮學校效果的情況下，並不考量個人層次變項(學生的家庭社會經濟地位、智力測驗成績與性別)對學生數學能力的影響，學生的數學能力的學校間差異，是否可以由學校家庭社會經濟地位平均數與學校智力測驗成績所解釋?
 
@@ -98,6 +87,13 @@ m5 <- lmer(score ~ 1 + sch_ses + grdcentsch_iq + (1|schoolid), data = mydata)
 sjt.lmer(m5, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
          show.ci = F, p.numeric = F)
 ```
+
+$$\hat{y_{ij}} = \hat{\beta _{0j}} + e_{i} --- (3)$$
+
+$$\hat{\beta _{0j}} = \hat{\gamma_{00}} + \hat{\gamma_{01}}Schses_{j} + \hat{\gamma_{02}}Schiq_{j}  + \hat{u_{oj}} --- (3.1)$$
+因為不考慮個人層次的變項，因此在模型(3)第一層模型中僅需放入截距項，並透過第二層模型的學校層次變項加以解釋。結果顯示經過中心化處理後的各學校平均iq有達到顯著水準，也就是個人所處學校平均iq每增加1單位，其數學表現也會高出總平均3.43分。這也代表了個人數學能力會受到所處學校脈絡的影響。
+
+
 
 6. 在考慮學校效果的情況下，學生的家庭社會經濟地位、智力測驗成績與性別對學生數學能力的影響是否有學校間的差異?如果影響效果有差異，是否可以由學校家庭社會經濟地位平均數與學校智力測驗成績所解釋?
 
@@ -110,7 +106,35 @@ m6.2 <- lmer(score ~ ses + grpcent_iq + sex + grdcentsch_iq + sch_ses +
              grdcentsch_iq*(ses + grpcent_iq + sex) + sch_ses*(ses + grpcent_iq + sex) + 
              (ses + grpcent_iq + sex|schoolid), data = mydata)
 
+lmerTest::anova(m6.1, m6.2)
+
 sjt.lmer(m6.1, m6.2, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, 
          show.ci = F,  p.numeric = F)
+```
+
+$$\hat{y_{ij}} = \hat{\beta _{0j}} + \hat{\beta _{1j}}SES_{ij} + \hat{\beta _{2}}IQ_{ij} + \hat{\beta _{3}}SEX_{ij} + e_{i} --- (4)$$
+
+$$\hat{\beta _{0j}} =  \hat{\gamma_{00}} + \hat{u_{oj}} --- (4.1)$$ 
+
+$$\hat{\beta _{1j}} =  \hat{\gamma_{10}} + \hat{u_{1j}} --- (4.2)$$ 
+
+$$\hat{\beta _{2j}} =  \hat{\gamma_{20}} + \hat{u_{2j}} --- (4.3)$$ 
+
+$$\hat{\beta _{3j}} =  \hat{\gamma_{30}} + \hat{u_{3j}} --- (4.4) $$ 
+考量學校的效果後，為檢驗個人層次變項是否會因學校而有不同，考量隨機截距和斜率可以列出以上4個模型，由下表的結果顯示三者皆有達到統計水準，表示其影響效果確實會隨學校而不同。進一步考量影響效果的差異，可以列出下面的式子：
+
+$$\hat{\beta _{kj}} = \hat{\gamma_{k0}} + \hat{\gamma_{k1}}Schses_{j} + \hat{\gamma_{k2}}Schiq_{j}  + \hat{u_{kj}} --- (4.5)$$
+
+$$k = 0,1,2,3$$
+
+$$H_{0}:\gamma_{k1}, \gamma_{k2} = 0$$
+首先透過模型比較的方式，模型@的BIC和AIC皆小於前者，卡方檢定的結果也打顯著，因此模型@的配適度較為優異，應選用後者的模型。進一步觀察研究結果，由下表的結果來看，先由截距項來解釋，總體的數學平均約為53分，學校平均iq每增加1單位個人的數學成績會高出3.58分，學校平均社經地位增加1單位則會減少0.12分，但其僅是略高於顯著水準而已，由此可知兩者可以解釋學校間數學能力的差異，個人層次的變項來看，社經地位提高1單位學生數學成績可以提高0.17分，iq則可以提高2.66分，而男性高於女性2.44分。影響效果的差異來看，考量跨層次的交互作用，僅有性別和學校平均iq間的關係達到顯著水準，結果顯示，男性所身處的學校平均iq提高1個單位，反而會減少0.58分，也就是在高iq的學校環境，男性和女性的數學能力差異會下降。
+
+```{r}
+sjt.lmer(m2, m5, m6.1, m6.2, pred.labels = c("SES", "IQ", "Male", "Sch_SES", "Sch_IQ", 
+        "Sch_IQ * SES", "Sch_IQ * IQ", "Sch_IQ * Male", "Sch_SES * SES", 
+        "Sch_SES * IQ", "Sch_SES * Male"), 
+        depvar.labels = c("Model2", "Model3", "Model4", "Model4.5"),
+        show.header = F, p.kr = FALSE, show.icc = T, show.se = T, separate.ci.col = F, show.ci = F,  p.numeric = F, show.aic = T)
 ```
 
