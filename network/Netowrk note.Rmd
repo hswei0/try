@@ -1,0 +1,843 @@
+---
+title: "A User’s Guide to Network Analysis in R_my note"
+output: github_document
+---
+
+# Charpter 2
+
+## Simple Visualization
+
+```{r}
+if (!require("pacman")) install.packages("pacman") # `pacman`用於確認套件是否安裝
+pacman::p_load(statnet, UserNetR)
+data(Moreno)
+gender <- Moreno %v% "gender"
+plot(Moreno, vertex.col = gender + 2, vertex.cex = 1.2)
+```
+
+### Size
+
+> The size is simply the number of members, usually called nodes, vertices or actors.
+
+```{r}
+summary(Moreno,print.adj = FALSE)
+components(Moreno)
+network.size(Moreno)
+```
+
+### Density
+
+> Density is the proportion of observed ties (also called edges, arcs, or relations) in a network to the maximum number of possible ties.
+
+**Directed Network**
+
+$$Density = \frac{L}{k(k - 1)}$$
+**Undirected Network**
+
+$$Density = \frac{2L}{k(k - 1)}$$
+
+```{r}
+gden(Moreno)
+```
+
+
+### Diameter
+
+> The diameter then for an entire network is the longest of the shortest paths across all pairs of nodes.
+
+```{r}
+
+lgc <- component.largest(Moreno, result = "graph")
+(gd <- geodist(lgc)) ##點與點間的距離
+max(gd$gdist)
+
+```
+
+### Clustering Coefficient
+
+> the presence of clustering, or the tendency to formed closed triangles.
+
+```{r}
+gtrans(Moreno, mode = "graph")
+```
+
+# Network Data Management in R
+
+```{r}
+# Netwrok data
+netmat1 <- rbind(c(0, 1, 1, 0, 0), c(0, 0, 1, 1, 0), c(0, 1, 0, 0, 0), 
+                 c(0, 0, 0, 0, 0), c(0, 0, 1, 0, 0))
+rownames(netmat1) <- c("A", "B", "C", "D", "E")
+colnames(netmat1) <- c("A", "B", "C", "D", "E")
+net1 <- network(netmat1, matrix.type = "adjacency")
+class(net1)
+summary(net1)
+gplot(net1, vertex.col = 2, displaylabels = TRUE) ## `2`是紅色
+
+as.sociomatrix(net1) ## 轉為網絡矩陣
+as.matrix(net1, matrix.type = "edgelist") ## 關係list
+
+netmat2 <- rbind(c(1, 2), c(1, 3), c(2, 3), c(2, 4), c(3, 2), c(5, 3))
+net2 <- network(netmat2, matrix.type = "edgelist")
+network.vertex.names(net2) <- c("A", "B", "C", "D", "E")
+summary(net2)
+
+set.vertex.attribute(net1, "gender", c("F", "F", "M", "F", "M"))
+net1 %v% "alldeg" <- degree(net1) ## 給予每個vertic點度
+list.vertex.attributes(net1)
+summary(net1)
+get.vertex.attribute(net1, "gender")
+net1 %v% "alldeg"
+
+list.edge.attributes(net1)
+set.edge.attribute(net1, "rndval", runif(network.size(net1), 0, 1))
+## 給予每個關係一個隨機數值
+summary(net1 %e% "rndval")
+summary(get.edge.attribute(net1, "rndval"))
+
+netval1 <- rbind(c(0, 2, 3, 0, 0), c(0, 0, 3, 1, 0), c(0, 1, 0, 0, 0),
+                 c(0, 0, 0, 0, 0), c(0, 0, 2, 0, 0))
+netval1 <- network(netval1, matrix.type = "adjacency", ignore.eval = FALSE, names.eval = "like")
+network.vertex.names(netval1) <- c("A", "B", "C", "D", "E")
+list.edge.attributes(netval1)
+get.edge.attribute(netval1, "like")
+as.sociomatrix(netval1)
+```
+
+* `%v%` 代表了提取*vector*資料
+* `network.vertex.names()` 給予vertic名稱
+* `set.vertex.attribute()` 給予vertic性質
+* `list.vertex.attributes` 列出所有vertic具有的性質
+* `get.vertex.attribute(data, attr)` 列出各vertic具有的某性質
+
+## Creating a Network Object in igraph
+```{r}
+if (require(statnet)) detach(package:statnet) 
+library(igraph)
+
+inet1 <- graph.adjacency(netmat1)
+summary(inet1)
+
+inet2 <- graph.edgelist(netmat2)
+V(inet2)$name <- c("A","B","C","D","E") 
+E(inet2)$val <- c(1:6)
+summary(inet2)
+```
+
+* `graph.adjacency()` 製作關係資料
+
+## Importing Network Data
+### 讀取外部資料
+
+```{r}
+if (require(igraph)) detach("package:igraph", unload = TRUE)
+library(statnet)
+
+netmat3 <- rbind(c("A", "B"), c("A", "C"), c("B", "C"), c("B", "D"), c("C", "B"), 
+                 c("E", "C"))
+net.df <- data.frame(netmat3)
+net.df
+write.csv(net.df, file = "MyData.csv", row.names = FALSE)
+(net.edge <- read.csv(file = "MyData.csv")) ## 讀取外部檔案
+net_import <- network(net.edge, matrix.type = "edgelist")
+summary(net_import)
+gden(net_import)
+```
+
+### 資料處理
+```{r}
+## 刪除資料
+data(ICTS_G10)
+gden(ICTS_G10)
+length(isolates(ICTS_G10))
+n3 <- ICTS_G10
+delete.vertices(n3, isolates(n3))  # 刪除孤立點
+gden(n3)
+length(isolates(n3))
+
+
+# Filtering Based on Edge Values
+data(DHHS)
+d <- DHHS
+gden(d)
+op <- par(mar = rep(0, 4))
+gplot(d, gmode = "graph", edge.lwd = d %e% "collab", edge.col = "grey50", vertex.col = "lightblue", 
+      vertex.cex = 1, vertex.sides = 20)
+par(op)
+as.sociomatrix(d)[1:6, 1:6]
+list.edge.attributes(d)
+as.sociomatrix(d, attrname = "collab")[1:6, 1:6]
+table(d %e% "collab")
+
+(d.val <- as.sociomatrix(d, attrname = "collab"))
+d.val[d.val < 3] <- 0 ## 將val小於3設為０
+
+d.filt <- as.network(d.val, directed = FALSE, matrix.type = "a", ignore.eval = FALSE, 
+                     names.eval = "collab")
+summary(d.filt, print.adj = FALSE)
+op <- par(mar = rep(0, 4))
+gplot(d.filt, gmode = "graph", displaylabels = TRUE, vertex.col = "lightblue", vertex.cex = 1.3, 
+      label.cex = 0.4, label.pos = 5, displayisolates = FALSE)
+
+op <- par(mar = rep(0, 4))
+d.val <- as.sociomatrix(d, attrname = "collab")
+gplot(d.val, gmode = "graph", thresh = 2, vertex.col = "lightblue", vertex.cex = 1.3, 
+      label.cex = 0.4, label.pos = 5, displayisolates = FALSE)
+par(op)
+```
+
+* `isolate()` 找出孤立點
+* `delete.vertices()` 刪除 vertex
+
+### Transforming a Directed Network to a Non-directed Network
+```{r}
+net1mat <- symmetrize(net1, rule = "weak")
+net1mat
+net1symm <- network(net1mat, matrix.type = "adjacency")
+network.vertex.names(net1symm) <- c("A", "B", "C", "D", "E")
+```
+
+* `symmetrize()` 將方向性平衡
+  * rule:
+  1. upper: Copy the upper triangle over the lower triangle
+  2. lower: Copy the lower triangle over the upper triangle
+  3. strong: i<->j iff i->j and i<-j (AND rule)
+  4. weak: i<->j iff i->j or i<-j (OR rule
+
+
+# Chapter 4
+## Basic Network Plotting and Layout
+
+```{r}
+pacman::p_load(statnet, UserNetR)
+data(Moreno)
+op <- par(mar = rep(0, 4), mfrow = c(1, 2))
+plot(Moreno, mode = "circle", vertex.cex = 1.5)
+plot(Moreno, mode = "fruchtermanreingold", vertex.cex = 1.5)
+par(op)
+
+op <- par(mar = c(0, 0, 4, 0), mfrow = c(1, 2))
+gplot(Moreno, gmode = "graph", mode = "random", vertex.cex = 1.5, main = "Random Layout")
+gplot(Moreno, gmode = "graph", mode = "fruchtermanreingold", vertex.cex = 1.5,
+      main = "Fruchterman-Reingold")
+```
+
+### Basic Plotting Algorithms and Methods
+```{r}
+data("Bali")
+op <- par(mar = c(0, 0, 4, 0), mfrow = c(2, 3))
+gplot(Bali, gmode = "graph", edge.col = "grey75", vertex.cex = 1.5, mode = "circle", 
+    main = "circle")
+gplot(Bali, gmode = "graph", edge.col = "grey75", vertex.cex = 1.5, mode = "eigen", 
+    main = "eigen")
+gplot(Bali, gmode = "graph", edge.col = "grey75", vertex.cex = 1.5, mode = "random", 
+    main = "random")
+gplot(Bali, gmode = "graph", edge.col = "grey75", vertex.cex = 1.5, mode = "spring", 
+    main = "spring")
+gplot(Bali, gmode = "graph", edge.col = "grey75", vertex.cex = 1.5, mode = "fruchtermanreingold", 
+    main = "fruchtermanreingold")
+gplot(Bali, gmode = "graph", edge.col = "grey75", vertex.cex = 1.5, mode = "kamadakawai", 
+    main = "kamadakawai")
+par(op)
+
+## 儲存圖片參數
+mycoords1 <- gplot(Bali, gmode = "graph", vertex.cex = 1.5)
+mycoords2 <- mycoords1
+mycoords2[, 2] <- mycoords1[, 2] * 1.5
+mycoords1
+mycoords2
+
+op <- par(mar = c(4, 3, 4, 3), mfrow = c(1, 2))
+gplot(Bali, gmode = "graph", coord = mycoords1, vertex.cex = 1.5, suppress.axes = FALSE, 
+    ylim = c(min(mycoords2[, 2]) - 1, max(mycoords2[, 2]) + 1), main = "Original coordinates")
+gplot(Bali, gmode = "graph", coord = mycoords2, vertex.cex = 1.5, suppress.axes = FALSE, 
+    ylim = c(min(mycoords2[, 2]) - 1, max(mycoords2[, 2]) + 1), main = "Modified coordinates")
+
+```
+
+#### Network Graph Layouts Using igraph
+
+```{r message=FALSE, warning=FALSE}
+if (require(statnet)) detach(package:statnet)
+library(igraph)
+library(intergraph)  ## 轉為igragh
+iBali <- asIgraph(Bali)  ## igraph格式
+op <- par(mar = c(0, 0, 3, 0), mfrow = c(1, 3))
+plot(iBali, layout = layout_in_circle, main = "Circle")
+plot(iBali, layout = layout_randomly, main = "Random")
+plot(iBali, layout = layout_with_kk, main = "KK")
+
+```
+
+# Chapter 5
+## Effective Network Graphic Design
+
+### Node Color
+```{r}
+data("Bali")
+gplot(Bali, vertex.col = "slateblue2", gmode = "graph")
+```
+
+### 調整透明度
+```{r}
+ndum <- rgraph(300, tprob = 0.025, mode = "graph")
+par(mar = c(0, 0, 2, 0), mfrow = c(1, 2))
+gplot(ndum, gmode = "graph", vertex.cex = 2, vertex.col = rgb(0, 0, 139, maxColorValue = 255), 
+    edge.col = "grey80", edge.lwd = 0.5, main = "Fully opaque")
+gplot(ndum, gmode = "graph", vertex.cex = 2, vertex.col = rgb(0, 0, 139, alpha = 80, 
+    maxColorValue = 255), edge.col = "grey80", edge.lwd = 0.5, main = "Partly transparent")
+```
+* using argument `alpha` 
+
+### Change node Color
+```{r message=FALSE, paged.print=TRUE}
+if (require(igraph)) detach(package:igraph)
+?(Bali)
+data("Bali")
+rolelab <- get.vertex.attribute(Bali, "role")  
+op <- par(mar = c(0, 0, 0, 0))
+plot(Bali, usearrows = FALSE, vertex.cex = 1.5, label = rolelab, displaylabels = T, 
+    vertex.col = "role")
+
+## 更改色卡
+library(RColorBrewer)
+display.brewer.pal(5, "Dark2")
+
+my_pal <- brewer.pal(5, "Dark2")
+rolecat <- as.factor(get.vertex.attribute(Bali, "role"))
+plot(Bali, vertex.cex = 1.5, label = rolelab, displaylabels = T, vertex.col = my_pal[rolecat])
+```
+
+the Bali terrorist network has the role vertex attribute which stores the categorical description of the role that each member played in the network.
+* 預設調色盤缺點
+  * limited to eight colors
+  * starts with black
+  
+### Node Shape
+
+```{r}
+op <- par(mar=c(0,0,0,0))
+sidenum <- 3:7 
+plot(Bali, usearrows = FALSE, vertex.cex = 4, 
+     displaylabels = F, vertex.sides = sidenum[rolecat])
+par(op)
+```
+
+Unfortunately, `statnet` has only a **limited ability** to distinguish nodes by shapes
+
+### Node Size
+
+```{r}
+op <- par(mar = c(0, 0, 2, 0), mfrow = c(1, 3))
+plot(Bali, vertex.cex = 0.5, main = "Too small")
+plot(Bali, vertex.cex = 2, main = "Just right")
+plot(Bali, vertex.cex = 6, main = "Too large")
+par(op)
+
+# using centrality as exmple
+deg <- sna::degree(Bali, gmode = "graph")
+op <- par(mar = c(0, 0, 2, 1), mfrow = c(1, 2))
+plot(Bali, usearrows = T, vertex.cex = deg, main = "Raw")
+plot(Bali, usearrows = FALSE, vertex.cex = log(deg), main = "Adjusted")
+par(op)
+
+cls <- closeness(Bali, gmode = "graph")
+op <- par(mar = c(0, 0, 2, 1), mfrow = c(1, 2))
+plot(Bali, usearrows = T, vertex.cex = cls, main = "Raw")
+plot(Bali, usearrows = FALSE, vertex.cex = 4 * cls, main = "Adjusted")
+par(op)
+
+bet <- betweenness(Bali, gmode = "graph")
+op <- par(mar = c(0, 0, 2, 1), mfrow = c(1, 2))
+plot(Bali, usearrows = T, vertex.cex = bet, main = "Raw")
+plot(Bali, usearrows = FALSE, vertex.cex = sqrt(bet + 1), main = "Adjusted")
+```
+* argument `vertex.cex`
+* 調整方式：
+  ** log
+  ** 倍數法
+  ** 開根號
+  
+#### creating `rescale` function
+
+```{r}
+rescale <- function(nchar,low,high) {
+min_d <- min(nchar)
+max_d <- max(nchar)
+rscl <- ((high-low)*(nchar-min_d))/(max_d-min_d)+low 
+rscl
+}
+
+plot(Bali, vertex.cex = rescale(deg, 1, 6), main = "Adjusted node sizes with rescale function.")
+```
+
+### Node Label
+
+```{r}
+get.vertex.attribute(Bali, "vertex.names")
+op <- par(mar = c(0, 0, 0, 0))
+plot(Bali, displaylabels = TRUE, label.cex = 0.8, pad = 0.4, label.col = "darkblue")
+par(op)
+rolelab <- get.vertex.attribute(Bali, "role")
+plot(Bali, usearrows = FALSE, label = rolelab, displaylabels = T, label.col = "darkblue")
+```
+
+If a network object in `statnet` contains the special vertex attribute **vertex.names**, then this can be used to automatically display node labels when plotting.
+
+
+### Edge Width
+
+```{r}
+op <- par(mar = c(0, 0, 0, 0))
+IClevel <- Bali %e% "IC"
+plot(Bali, vertex.cex = 1.5, edge.lwd = 1.5 * IClevel)
+par(op)
+```
+* using argument `edge.lwd`
+
+### Edge Color
+```{r}
+n_edge <- network.edgecount(Bali)
+edge_cat <- sample(1:3, n_edge, replace = T)  ## example
+linecol_pal <- c("blue", "red", "green")
+plot(Bali, vertex.cex = 1.5, vertex.col = "grey25", edge.col = linecol_pal[edge_cat], 
+    edge.lwd = 2)
+```
+* using argument `edge.col`
+
+###  Edge Type
+
+```{r}
+n_edge <- network.edgecount(Bali)
+edge_cat <- sample(1:3, n_edge, replace = T)
+line_pal <- c(2, 3, 4)
+gplot(Bali, vertex.cex = 0.8, gmode = "graph", vertex.col = "gray50", edge.lwd = 1.5, 
+    edge.lty = line_pal[edge_cat])
+```
+
+the different line types **do not show up clearly** using `plot()`, so `gplot()` is used here
+* using argument `edge.lty`
+
+### Legends
+
+```{r message=FALSE, warning=FALSE}
+my_pal <- brewer.pal(5, "Dark2")
+rolecat <- as.factor(get.vertex.attribute(Bali, "role"))
+library(scales)
+plot(Bali, vertex.cex = rescale(deg, 1, 5), vertex.col = my_pal[rolecat])
+legend("bottomleft", legend = c("BM", "CT", "OA", "SB", "TL"), col = my_pal, pch = 19,
+       pt.cex = 1.5, bty = "n", title = "Terrorist Role")
+```
+
+# Chapter 6
+## Interactive Network Graphics
+
+先跳過
+
+# Chapter 7
+## Actor Prominence
+
+## Centrality: Prominence for Undirected Networks
+
+### 1. Degree Centrality
+
+>  Degree centrality is simply the degree of each node.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+net <- network(netmat1)
+degree(net, gmode = "graph")
+```
+
+### 2. Closeness Centrality
+
+>  nodes are more prominent to the extent they are close to all other nodes in the network
+
+$$C_{c}(n_{i}) =\left [ \sum_{j = 1}^{g}d(n_{i}, n_{j}) \right ] ^{-1}$$
+
+* where *d* is the path distance between two nodes.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+closeness(net, gmode = "graph")
+```
+
+### 3. Betweenness Centrality
+
+> such that a path between the other nodes has to go through that node. 
+
+$$C_{Ｂ}(n_{i}) =\sum_{j < k}g_{jk}(n_{i})/g_{jk}$$
+where $g_{jk}$ is the geodesic between nodes j and k. (A geodesic is the shortest path between two nodes.) $g_{jk}(n_{i})$ is the number of geodesics between nodes j and k that contain node i.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+betweenness(net, gmode="graph")
+```
+
+### Centrality Measures in R
+
+```{r}
+library(statnet)
+data(DHHS)
+df.prom <- data.frame(deg = sna::degree(DHHS), cls = closeness(DHHS), btw = betweenness(DHHS), 
+                      evc = evcent(DHHS), inf = infocent(DHHS), flb = flowbet(DHHS))
+cor(df.prom) ## correlation
+```
+
+### Reporting Centrality
+
+```{r message=FALSE, warning=FALSE}
+data(Bali)
+my_pal <- brewer.pal(5, "Set2")
+rolecat <- Bali %v% "role"
+gplot(Bali, usearrows = FALSE, displaylabels = TRUE, vertex.col = my_pal[as.factor(rolecat)], 
+    edge.lwd = 0, edge.col = "grey25")
+legend("topright", legend = c("BM","CT","OA","SB", "TL"), col = my_pal, pch = 19, pt.cex = 2)
+
+data(Bali)
+df.prom2 <- data.frame(degree = degree(Bali), closeness = closeness(Bali), 
+                       betweenness = betweenness(Bali))
+row.names(df.prom2) <- Bali %v% "vertex.names"
+df.promsort <- df.prom2[order(-df.prom2$degree), ]
+cd <- centralization(Bali, degree)
+cc <- centralization(Bali, closeness)
+cb <- centralization(Bali, betweenness)
+df.promsort <- rbind(df.promsort, c(cd, cc, cb))
+row.names(df.promsort)[18] <- "Centralization"
+df.promsort
+
+deg <- degree(Bali, rescale = TRUE)
+op <- par(mfrow=c(1,2)) 
+gplot(Bali, usearrows = FALSE, displaylabels=FALSE, vertex.cex = deg, 
+      vertex.col = my_pal[as.factor(rolecat)], edge.lwd = 0, edge.col = "grey25", main = "Too small")
+gplot(Bali, usearrows = FALSE, displaylabels = FALSE, 
+      vertex.cex = deg*20, vertex.col =my_pal[as.factor(rolecat)], edge.lwd = 0, edge.col = "grey25", 
+      main ="A little better")
+par(op)
+
+deg <- degree(Bali, rescale = TRUE) 
+gplot(Bali, usearrows = FALSE, displaylabels = TRUE,
+      vertex.cex = deg*12, vertex.col = my_pal[as.factor(rolecat)], edge.lwd = 0.5, 
+      edge.col = "grey75")
+legend("topright", legend = c("BM","CT","OA","SB","TL"), col = my_pal, pch = 19, pt.cex = 2)
+```
+
+## Cutpoints and Bridges
+
+* using fuction `cutponts()`
+
+# Chapter 8
+## Subgroups
+
+### Cliques
+
+>  a subset of nodes that have all possible ties among them.
+
+```{r message=FALSE, warning=FALSE}
+if (require(statnet)) detach(package:statnet)
+library(igraph)
+(clqexmp <- graph.formula(A:B:C:D - -A:B:C:D, D - E, E - F - G - E))
+
+clique.number(clqexmp)
+cliques(clqexmp, min = 3)
+maximal.cliques(clqexmp, min = 3)
+largest.cliques(clqexmp)
+V(clqexmp)[unlist(largest.cliques(clqexmp))]
+```
+
+Cliques, however, have two major **disadvantages** that reduce their utility in realworld social network analysis.
+1. a clique is a very conservative definition of a cohesive subgroup.
+2. they simply are not very common in larger social networks. 
+
+### k-Cores
+
+> each vertex is connected to at least k other vertices in the subgraph. 
+
+* advantages
+  **  nested
+  **  do not overlap
+  **  easy to identify
+  
+```{r message=FALSE, warning=FALSE}
+library(statnet)
+data(DHHS) 
+library(intergraph) 
+pacman::p_load(igraph)
+iDHHS <- asIgraph(DHHS) 
+graph.density(iDHHS)
+
+iDHHS <- subgraph.edges(iDHHS, E(iDHHS)[collab > 2]) ## subgroup
+graph.density(iDHHS)
+
+coreness <- graph.coreness(iDHHS)
+table(coreness) ## The results tell us the k-cores range from 1 to 6
+(maxCoreness <- max(coreness))
+```
+
+```{r}
+Vname <- get.vertex.attribute(iDHHS, name = "vertex.names", index = V(iDHHS))
+V(iDHHS)$name <- Vname
+V(iDHHS)$color <- coreness + 1
+op <- par(mar = rep(0, 4))
+plot(iDHHS, vertex.label.cex = 0.8) 
+par(op)
+```
+```{r}
+colors <- rainbow(maxCoreness) 
+op <- par(mar = rep(0, 4)) 
+plot(iDHHS, vertex.label = coreness, vertex.color = colors[coreness])
+par(op)
+```
+
+#### in different k-core
+```{r message=FALSE, warning=FALSE}
+V(iDHHS)$name <- coreness
+V(iDHHS)$color <- colors[coreness]
+iDHHS1_6 <- iDHHS
+iDHHS2_6 <- induced.subgraph(iDHHS, vids = which(coreness > 1))
+iDHHS3_6 <- induced.subgraph(iDHHS, vids = which(coreness > 2))
+iDHHS4_6 <- induced.subgraph(iDHHS, vids = which(coreness > 3))
+iDHHS5_6 <- induced.subgraph(iDHHS, vids = which(coreness > 4))
+iDHHS6_6 <- induced.subgraph(iDHHS, vids = which(coreness > 5))
+
+lay <- layout.fruchterman.reingold(iDHHS)
+op <- par(mfrow = c(3, 2), mar = c(3, 0, 2, 0))
+plot(iDHHS1_6, layout = lay, main = "All k-cores")
+plot(iDHHS2_6, layout = lay[which(coreness > 1), ], main = "k-cores 2-6")
+plot(iDHHS3_6, layout = lay[which(coreness > 2), ], main = "k-cores 3-6")
+plot(iDHHS4_6, layout = lay[which(coreness > 3), ], main = "k-cores 4-6")
+plot(iDHHS5_6, layout = lay[which(coreness > 4), ], main = "k-cores 5-6")
+par(op)
+```
+
+* `induced.subgraph()` 選取次群體
+
+### Modularity
+
+> Modularity is a measure of the structure of the network, specifically the extent to which nodes exhibit clustering where there is greater density within the clusters and less density between them.
+
+#### 分組示意圖
+```{r warning=FALSE}
+g1 <- graph.formula(A - B - C - A, D - E - F - D, G - H - I - G, A - D - G - A)
+V(g1)$grp_good <- c(1, 1, 1, 2, 2, 2, 3, 3, 3)
+V(g1)$grp_bad <- c(1, 2, 3, 2, 3, 1, 3, 1, 2)
+op <- par(mfrow = c(1, 2))
+plot(g1, vertex.color = (V(g1)$grp_good), vertex.size = 20, main = "Good Grouping")
+plot(g1, vertex.color = (V(g1)$grp_bad), vertex.size = 20, main = "Bad Grouping")
+par(op)
+
+modularity(g1, V(g1)$grp_good)
+modularity(g1, V(g1)$grp_bad)
+
+```
+
+```{r}
+library(intergraph) 
+data(DHHS)
+iDHHS <- asIgraph(DHHS) 
+table(V(iDHHS)$agency)
+V(iDHHS)[1:10]$agency
+modularity(iDHHS,(V(iDHHS)$agency+1)) ## agency is numbered starting at 0 so we add 1
+
+```
+可以用此算出次群體內的密度，例如，性別分群後群體的密度為何。
+
+#### Community Detection Algorithms
+
+```{r}
+iMoreno <- asIgraph(Moreno)
+cw <- cluster_walktrap(iMoreno) 
+membership(cw)
+modularity(cw)
+plot(cw, iMoreno) 
+```
+Modularity is fairly high, suggesting that the walktrap algorithm has **done a good job** at detecting subgroup structure.
+
+```{r}
+data(Bali)
+iBali <- asIgraph(Bali)
+
+cw <- cluster_walktrap(iBali)
+modularity(cw)
+membership(cw)
+
+ceb <- cluster_edge_betweenness(iBali)
+modularity(ceb)
+membership(ceb)
+
+cs <- cluster_spinglass(iBali) 
+modularity(cs)
+membership(cs)
+
+cfg <- cluster_fast_greedy(iBali)
+modularity(cfg)
+membership(cfg)
+
+clp <- cluster_label_prop(iBali) 
+modularity(clp)
+membership(clp)
+
+cle <- cluster_leading_eigen(iBali)
+modularity(cle)
+membership(cle)
+
+cl <- cluster_louvain(iBali) 
+modularity(cl)
+membership(cl)
+
+```
+
+These results show that all the detection algorithms identify either two or three subgroups. Modularity ranges from about 0.24 to 0.30.
+
+```{r}
+table(V(iBali)$role, membership(cw))
+compare(as.numeric(factor(V(iBali)$role)), cw, method = "adjusted.rand")
+compare(cw, ceb, method = "adjusted.rand")
+compare(cw, cs, method = "adjusted.rand")
+compare(cw, cfg, method = "adjusted.rand")
+
+op <- par(mfrow = c(3, 2), mar = c(3, 0, 2, 0))
+plot(ceb, iBali, vertex.label = V(iBali)$role, main = "Edge Betweenness")
+plot(cfg, iBali, vertex.label = V(iBali)$role, main = "Fastgreedy")
+plot(clp, iBali, vertex.label = V(iBali)$role, main = "Label Propagation")
+plot(cle, iBali, vertex.label = V(iBali)$role, main = "Leading Eigenvector")
+plot(cs, iBali, vertex.label = V(iBali)$role, main = "Spinglass")
+par(op)
+```
+
+* `compare` assesses the distance between two community structures.
+
+# Chapter 9
+## Affiliation Networks
+
+### Affiliations as 2-Mode Networks
+
+```{r}
+C1 <- c(1, 1, 1, 0, 0, 0)
+C2 <- c(0, 1, 1, 1, 0, 0)
+C3 <- c(0, 0, 1, 1, 1, 0)
+C4 <- c(0, 0, 0, 0, 1, 1)
+aff.df <- data.frame(C1, C2, C3, C4)
+row.names(aff.df) <- c("S1", "S2", "S3", "S4", "S5", "S6")
+aff.df
+```
+>> Students grouped by classes
+ 
+This type of data matrix is called an incidence matrix, and it depicts how n actors belong to g groups.
+
+### Bipartite Graphs
+
+there are always two types of nodes: one type for the actors, and another type for the groups or events to which the actors belong.
+
+```{r}
+library(igraph)
+bn <- graph.incidence(aff.df)
+
+plt.x <- c(rep(2, 6), rep(4, 4))
+plt.y <- c(7:2, 6:3)
+lay <- as.matrix(cbind(plt.x, plt.y))
+
+shapes <- c("circle","square")
+colors <- c("blue","red") 
+plot(bn, vertex.color = colors[V(bn)$type + 1], vertex.shape = shapes[V(bn)$type + 1],
+     vertex.size = 10, vertex.label.degree = -pi/2, 
+     vertex.label.dist = 1.2, vertex.label.cex = 0.9, layout = lay)
+```
+
+```{r}
+get.incidence(bn)
+V(bn)$type
+V(bn)$name
+```
+all the students have type = FALSE, and the class nodes have type = TRUE.
+
+### Creating Affiliation Networks from Edge Lists in `igraph`
+
+```{r}
+(el.df <- data.frame(rbind(c("S1", "C1"), c("S2", "C1"), c("S2", "C2"), c("S3", "C1"),  
+                          c("S3", "C2"), c("S3", "C3"), c("S4", "C2"), c("S4", "C3"),  
+                          c("S5", "C3"), c("S5", "C4"), c("S6", "C5"))))
+(bn2 <- graph.data.frame(el.df, directed = F))
+V(bn2)$type <- V(bn2)$name %in% el.df[, 1] ## set bipartite graph.
+bn2
+graph.density(bn) == graph.density(bn2) ## 證明與前者相同
+
+shapes <- c("circle", "square")
+colors <- c("blue", "red") 
+plot(bn, vertex.color = colors[V(bn)$type + 1], vertex.shape = shapes[V(bn)$type + 1],
+     vertex.size = 10, vertex.label.degree = -pi/2, vertex.label.dist = 1.2,
+     vertex.label.cex = 0.9)
+```
+Note that 1 is added to type index because as a logical vector it starts at 0, whereas we want to select either the first or second elements of the shapes/colors vectors.
+
+### Projections
+```{r}
+(bn.pr <- bipartite_projection(bn))
+graph.density(bn.pr$proj1) ## first mode
+
+bn.student <- bn.pr$proj1
+bn.class <- bn.pr$proj2 
+graph.density(bn.student)
+
+get.adjacency(bn.student, sparse = F, attr = "weight")
+get.adjacency(bn.class, sparse = F, attr = "weight")
+
+```
+
+* `bipartite_projection()` 
+1. first network is made up of the direct ties among the first mode (in our case students), 
+2. the second network shows the ties among the second mode (classes).
+
+
+```{r}
+shapes <- c("circle", "square")
+colors <- c("blue", "red")
+op <- par(mfrow = c(1, 2))
+plot(bn.student, vertex.color = "blue", vertex.shape = "circle", main = "Students", 
+    edge.width = E(bn.student)$weight * 2, vertex.size = 15, vertex.label.degree = -pi/2, 
+    vertex.label.dist = 1.2, vertex.label.cex = 1)
+plot(bn.class, vertex.color = "red", vertex.shape = "square", main = "Classes", 
+     edge.width = E(bn.student)$weight * 2, vertex.size = 15, vertex.label.degree = -pi/2,
+     vertex.label.dist = 1.2, vertex.label.cex = 1)
+```
+
+## Example: Hollywood Actors as an Affiliation Network
+```{r}
+data(hwd)
+(h1 <- hwd )
+
+# 資料探索
+V(h1)$name[1:10]
+V(h1)$type[1:10]
+V(h1)$IMDBrating[1:10]
+
+V(h1)$shape <- ifelse(V(h1)$type == T, "square", "circle")
+V(h1)$shape[1: 10]
+V(h1)$color <- ifelse(V(h1)$type == T, "red", "lightblue")
+
+h2 <- subgraph.edges(h1, E(h1)[inc(V(h1)[name %in% c("The Wolf of Wall Street", "Gangs of New York",
+"The Departed")])])
+
+plot(h2, layout = layout_with_kk)
+```
+ * `inc` function takes a vertex sequence as an argument, and returns the incident edges.
+  >  special function of the E() edge iterator.
+
+#### descriptive statistics
+```{r}
+graph.density(h1)
+table(degree(h1, v = V(h1)[type == F]))
+mean(degree(h1, v = V(h1)[type == F]))
+```
+
+```{r}
+V(h1)$deg <- degree(h1)
+V(h1)[type==FALSE & deg > 4]$name ## 中心度高的演員
+busy_actor <- data.frame(cbind(
+  Actor = V(h1)[type == F & deg > 4]$name, 
+  Movies = V(h1)[type == F & deg > 4]$deg 
+))
+busy_actor[order(busy_actor$Movies,decreasing = TRUE), ]
+
+for (i in 161:1365) {
+  V(h1)[i]$totrating <- sum(V(h1)[nei(i)]$IMDBrating)
+}
+```
+
